@@ -9,30 +9,29 @@ const crypto = require('crypto');
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const { execSync } = require('child_process');
-const UPLOAD_URL = process.env.UPLOAD_URL || '';      // 节点或订阅自动上传地址,需填写部署Merge-sub项目后的首页地址,例如：https://merge.xxx.com
-const PROJECT_URL = process.env.PROJECT_URL || '';    // 需要上传订阅或保活时需填写项目分配的url,例如：https://google.com
-const AUTO_ACCESS = process.env.AUTO_ACCESS || false; // false关闭自动保活，true开启,需同时填写PROJECT_URL变量
-const FILE_PATH = process.env.FILE_PATH || '.tmp';    // 运行目录,sub节点文件保存目录
-const SUB_PATH = process.env.SUB_PATH || 'sub';       // 订阅路径
-const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;        // http服务订阅端口
-const UUID = process.env.UUID || '7e8fa1ce-47ef-4445-bcad-7470c63fbda1'; // 使用哪吒v1,在不同的平台运行需修改UUID,否则会覆盖
-const NEZHA_SERVER = process.env.NEZHA_SERVER || '';        // 哪吒v1填写形式: nz.abc.com:8008  哪吒v0填写形式：nz.abc.com
-const NEZHA_PORT = process.env.NEZHA_PORT || '';            // 使用哪吒v1请留空，哪吒v0需填写
-const NEZHA_KEY = process.env.NEZHA_KEY || '';              // 哪吒v1的NZ_CLIENT_SECRET或哪吒v0的agent密钥
-const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'node.reinkarnasi.web.id';          // 固定隧道域名,留空即启用临时隧道
-const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiY2UwY2M3YjNlYjljYzQ0NTYwNmI0NmU3MzYxMzVlNjAiLCJ0IjoiYmUzMzQ5YzUtMzQ0MS00NjQyLWJhMGEtYTBlZmQ2MWRhNzI4IiwicyI6Ik5HSXdaVGMwTTJZdE1UWmhOQzAwWldWbUxUaGpaRGt0T0RKbE16WTBNVFUxT0RBeCJ9';              // 固定隧道密钥json或token,留空即启用临时隧道,json获取地址：https://json.zone.id
-const ARGO_PORT = process.env.ARGO_PORT || 8001;            // 固定隧道端口,使用token需在cloudflare后台设置和这里一致
-const S5_PORT = process.env.S5_PORT || '';                  // socks5端口，支持多端口的可以填写，否则留空
-const HY2_PORT = process.env.HY2_PORT || '2053';                // hy2端口，支持多端口的可以填写，否则留空
-const REALITY_PORT = process.env.REALITY_PORT || '8443';        // reality端口，支持多端口的可以填写，否则留空
-const CFIP = process.env.CFIP || '104.17.3.81';            // 节点优选域名或优选ip
-const CFPORT = process.env.CFPORT || 443;                   // 节点优选域名或优选ip对应的端口
-const NAME = process.env.NAME || 'zet';                        // 节点名称
-const CHAT_ID = process.env.CHAT_ID || '';                  // Telegram chat_id  两个变量不全不推送节点到TG 
-const BOT_TOKEN = process.env.BOT_TOKEN || '';              // Telegram bot_token 两个变量不全不推送节点到TG 
-const SHOW_LOG = !['false', 'disable', 'no'].includes((process.env.SHOW_LOG || 'true').toLowerCase()); // 是否显示日志输出，true/yes显示，false/disable/no屏蔽，默认显示
+const UPLOAD_URL = process.env.UPLOAD_URL || ''; 
+const PROJECT_URL = process.env.PROJECT_URL || ''; 
+const AUTO_ACCESS = process.env.AUTO_ACCESS || false;
+const FILE_PATH = process.env.FILE_PATH || '.tmp';  
+const SUB_PATH = process.env.SUB_PATH || 'sub';
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;   
+const UUID = process.env.UUID || '7e8fa1ce-47ef-4445-bcad-7470c63fbda1';
+const NEZHA_SERVER = process.env.NEZHA_SERVER || ''; 
+const NEZHA_PORT = process.env.NEZHA_PORT || '';       
+const NEZHA_KEY = process.env.NEZHA_KEY || '';           
+const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'node.reinkarnasi.web.id';     
+const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiY2UwY2M3YjNlYjljYzQ0NTYwNmI0NmU3MzYxMzVlNjAiLCJ0IjoiYmUzMzQ5YzUtMzQ0MS00NjQyLWJhMGEtYTBlZmQ2MWRhNzI4IiwicyI6Ik5HSXdaVGMwTTJZdE1UWmhOQzAwWldWbUxUaGpaRGt0T0RKbE16WTBNVFUxT0RBeCJ9';             
+const ARGO_PORT = process.env.ARGO_PORT || 8001;          
+const S5_PORT = process.env.S5_PORT || '';               
+const HY2_PORT = process.env.HY2_PORT || '8443';             
+const REALITY_PORT = process.env.REALITY_PORT || '8443';     
+const CFIP = process.env.CFIP || '104.17.3.81';         
+const CFPORT = process.env.CFPORT || 443;                 
+const NAME = process.env.NAME || 'node';                     
+const CHAT_ID = process.env.CHAT_ID || '';                
+const BOT_TOKEN = process.env.BOT_TOKEN || '';            
+const SHOW_LOG = !['false', 'disable', 'no'].includes((process.env.SHOW_LOG || 'true').toLowerCase()); 
 
-// 控制日志输出
 if (!SHOW_LOG) {
   console.log = () => {};
   console.error = () => {};
@@ -41,7 +40,6 @@ function alwaysLog(msg) {
   process.stdout.write(msg + '\n');
 }
 
-// 创建运行文件夹
 if (!fs.existsSync(FILE_PATH)) {
   fs.mkdirSync(FILE_PATH);
   // console.log(`${FILE_PATH} is created`);
@@ -49,7 +47,6 @@ if (!fs.existsSync(FILE_PATH)) {
   // console.log(`${FILE_PATH} already exists`);
 }
 
-// 端口检查
 function isValidPort(port) {
   try {
     if (port === null || port === undefined || port === '') return false;
@@ -63,7 +60,6 @@ function isValidPort(port) {
   }
 }
 
-// 生成随机6位字符
 function generateRandomName() {
   const characters = 'abcdefghijklmnopqrstuvwxyz';
   let result = '';
@@ -73,7 +69,6 @@ function generateRandomName() {
   return result;
 }
 
-// 全局常量
 let subContent = null;
 let privateKey = '';
 let publicKey = '';
@@ -92,7 +87,6 @@ let configPath = path.join(FILE_PATH, 'config.json');
 let certPath = path.resolve(FILE_PATH, 'cert.pem');
 let keyPath = path.resolve(FILE_PATH, 'private.key');
 
-// 如果订阅器上存在历史运行节点则先删除
 function deleteNodes() {
   try {
     if (!UPLOAD_URL) return;
@@ -124,7 +118,6 @@ function deleteNodes() {
   }
 }
 
-// 清理历史文件
 function cleanupOldFiles() {
   try {
     const files = fs.readdirSync(FILE_PATH);
@@ -136,15 +129,12 @@ function cleanupOldFiles() {
           fs.unlinkSync(filePath);
         }
       } catch (err) {
-        // 忽略所有错误，不记录日志
       }
     });
   } catch (err) {
-    // 忽略所有错误，不记录日志
   }
 }
 
-// crypto 生成 X25519 密钥对
 function generateX25519Keypair() {
   const { publicKey: pubKey, privateKey: privKey } = crypto.generateKeyPairSync('x25519');
   const privateKeyRaw = privKey.export({ type: 'pkcs8', format: 'der' }).subarray(-32);
@@ -155,7 +145,6 @@ function generateX25519Keypair() {
   };
 }
 
-// X25519 密钥对生成或加载
 function generateOrLoadKeyPair() {
   const keyFilePath = path.join(FILE_PATH, 'key.txt');
   if (fs.existsSync(keyFilePath)) {
@@ -214,9 +203,7 @@ function ensureTlsCertificates(certPath, keyPath) {
   fs.writeFileSync(certPath, FALLBACK_CERT);
 }
 
-// 计算证书的 SHA-256 指纹，优先使用 openssl，不可用时用 Node.js crypto 兜底
 function getCertificateFingerprint(certPath) {
-  // 方案1: 优先用 openssl
   try {
     const result = execSync(
       `openssl x509 -noout -fingerprint -sha256 -in "${certPath}"`,
@@ -227,10 +214,8 @@ function getCertificateFingerprint(certPath) {
       return match[1].toUpperCase();
     }
   } catch (e) {
-    // openssl 不可用，继续用 Node.js crypto
   }
 
-  // 方案2: Node.js crypto 兜底
   try {
     const certData = fs.readFileSync(certPath, 'utf8');
     const derMatch = certData.match(/-----BEGIN CERTIFICATE-----([\s\S]+?)-----END CERTIFICATE-----/);
@@ -245,7 +230,6 @@ function getCertificateFingerprint(certPath) {
   }
 }
 
-// 生成xr-ay配置文件
 async function generateConfig() {
   const config = {
     log: { access: '/dev/null', error: '/dev/null', loglevel: 'none' },
@@ -260,7 +244,6 @@ async function generateConfig() {
     outbounds: [{ protocol: "freedom", tag: "direct" }, { protocol: "blackhole", tag: "block" }]
   };
 
-  // VLESS Reality 配置
   if (isValidPort(REALITY_PORT)) {
     config.inbounds.push({
       tag: "vless-in",
@@ -276,9 +259,9 @@ async function generateConfig() {
         security: "reality",
         realitySettings: {
           show: false,
-          dest: "graph.instagram.com:443",
+          dest: "www.instagram.com:443",
           xver: 0,
-          serverNames: ["graph.instagram.com"],
+          serverNames: ["www.instagram.com"],
           privateKey: privateKey,
           shortIds: [""]
         }
@@ -286,7 +269,6 @@ async function generateConfig() {
     });
   }
 
-  // Hysteria2 配置
   if (isValidPort(HY2_PORT)) {
     config.inbounds.push({
       tag: "hysteria-in",
@@ -320,7 +302,6 @@ async function generateConfig() {
     });
   }
 
-  // S5 配置
   if (isValidPort(S5_PORT)) {
     config.inbounds.push({
       tag: "s5-in",
@@ -343,7 +324,6 @@ async function generateConfig() {
   fs.writeFileSync(path.join(FILE_PATH, 'config.json'), JSON.stringify(config, null, 2));
 }
 
-// 判断系统架构
 function getSystemArchitecture() {
   const arch = os.arch();
   if (arch === 'arm' || arch === 'arm64' || arch === 'aarch64') {
@@ -353,7 +333,6 @@ function getSystemArchitecture() {
   }
 }
 
-// 下载对应系统架构的依赖文件
 function downloadFile(fileName, fileUrl, callback) {
   const filePath = fileName;
 
@@ -391,7 +370,6 @@ function downloadFile(fileName, fileUrl, callback) {
     });
 }
 
-// 下载并运行依赖文件
 async function downloadFilesAndRun() {
   const architecture = getSystemArchitecture();
   const filesToDownload = getFilesForArchitecture(architecture);
@@ -437,7 +415,6 @@ async function downloadFilesAndRun() {
   const filesToAuthorize = NEZHA_PORT ? [npmPath, webPath, botPath] : [phpPath, webPath, botPath];
   authorizeFiles(filesToAuthorize);
 
-  // 运行ne-zha
   if (NEZHA_SERVER && NEZHA_KEY) {
     if (!NEZHA_PORT) {
       const port = NEZHA_SERVER.includes(':') ? NEZHA_SERVER.split(':').pop() : '';
@@ -503,7 +480,6 @@ uuid: ${UUID}`;
     console.error(`web running error: ${error}`);
   }
 
-  // 运行cloud-fared
   if (fs.existsSync(botPath)) {
     let args;
 
@@ -526,7 +502,6 @@ uuid: ${UUID}`;
   await new Promise((resolve) => setTimeout(resolve, 5000));
 }
 
-// 根据系统架构返回对应的url
 function getFilesForArchitecture(architecture) {
   let baseFiles;
   if (architecture === 'arm') {
@@ -564,7 +539,6 @@ function getFilesForArchitecture(architecture) {
   return baseFiles;
 }
 
-// 获取固定隧道json
 function argoType() {
   if (!ARGO_AUTH || !ARGO_DOMAIN) {
     console.log("ARGO_DOMAIN or ARGO_AUTH is empty, use quick tunnels");
@@ -591,7 +565,6 @@ function argoType() {
   }
 }
 
-// 获取临时隧道domain
 async function extractDomains() {
   let argoDomain;
 
@@ -627,7 +600,7 @@ async function extractDomains() {
               await exec(`pkill -f "[${botName.charAt(0)}]${botName.substring(1)}" > /dev/null 2>&1`);
             }
           } catch (error) {
-            // 忽略输出
+
           }
         }
         killBotProcess();
@@ -648,7 +621,6 @@ async function extractDomains() {
   }
 }
 
-// 获取isp信息
 async function getMetaInfo() {
   try {
     const response1 = await axios.get('https://api.ip.sb/geoip', { headers: { 'User-Agent': 'Mozilla/5.0', timeout: 3000 } });
@@ -668,7 +640,6 @@ async function getMetaInfo() {
   return 'Unknown';
 }
 
-// 获取服务器公网IP
 async function getServerIP() {
   let serverIP = '';
   try {
@@ -693,7 +664,6 @@ async function getServerIP() {
   return serverIP;
 }
 
-// 生成 list 和 sub 信息
 async function generateLinks(argoDomain) {
   const ISP = await getMetaInfo();
   const nodeName = NAME ? `${NAME}-${ISP}` : ISP;
@@ -701,30 +671,27 @@ async function generateLinks(argoDomain) {
 
   return new Promise((resolve) => {
     setTimeout(() => {
-      const VMESS = { v: '2', ps: `${nodeName}`, add: CFIP, port: CFPORT, id: UUID, aid: '0', scy: 'auto', net: 'ws', type: 'none', host: argoDomain, path: '/vmess-argo?ed=2560', tls: 'tls', sni: argoDomain, alpn: '', fp: 'chrome' };
+      const VMESS = { v: '2', ps: `${nodeName}`, add: CFIP, port: CFPORT, id: UUID, aid: '0', scy: 'auto', net: 'ws', type: 'none', host: argoDomain, path: '/vmess-argo', tls: 'tls', sni: argoDomain, alpn: '', fp: 'chrome' };
       let subTxt = `
-vless://${UUID}@${CFIP}:${CFPORT}?encryption=none&security=tls&sni=${argoDomain}&fp=chrome&type=ws&host=${argoDomain}&path=%2Fvless-argo%3Fed%3D2560#${nodeName}
+vless://${UUID}@${CFIP}:${CFPORT}?encryption=none&security=tls&sni=${argoDomain}&fp=chrome&type=ws&host=${argoDomain}&path=%2Fvless-argo#${nodeName}
 
 vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}
 
-trojan://${UUID}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&fp=chrome&type=ws&host=${argoDomain}&path=%2Ftrojan-argo%3Fed%3D2560#${nodeName}
+trojan://${UUID}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&fp=chrome&type=ws&host=${argoDomain}&path=%2Ftrojan-argo#${nodeName}
     `;
 
-      // HY2_PORT是有效端口号时生成hysteria2节点
       if (isValidPort(HY2_PORT)) {
         const fingerprint = getCertificateFingerprint(certPath);
         const fingerprintParam = fingerprint ? `&pinSHA256=${encodeURIComponent(fingerprint)}` : '';
-        const hysteriaNode = `\nhysteria2://${UUID}@${SERVER_IP}:${HY2_PORT}/?sni=www.instagram.cominsecure=0&alpn=h3&obfs=none${fingerprintParam}#${nodeName}`;
+        const hysteriaNode = `\nhysteria2://${UUID}@${SERVER_IP}:${HY2_PORT}/?sni=www.instagram.com&insecure=0&alpn=h3&obfs=none${fingerprintParam}#${nodeName}`;
         subTxt += hysteriaNode;
       }
 
-      // REALITY_PORT是有效端口号时生成reality节点
       if (isValidPort(REALITY_PORT)) {
-        const vlessNode = `\nvless://${UUID}@${SERVER_IP}:${REALITY_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=graph.instagram.comfp=chrome&pbk=${publicKey}&type=tcp&headerType=none#${nodeName}`;
+        const vlessNode = `\nvless://${UUID}@${SERVER_IP}:${REALITY_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=www.instagram.com&fp=chrome&pbk=${publicKey}&type=tcp&headerType=none#${nodeName}`;
         subTxt += vlessNode;
       }
 
-      // S5_PORT是有效端口号时生成socks5节点
       if (isValidPort(S5_PORT)) {
         const S5_AUTH = Buffer.from(`${UUID.substring(0, 8)}:${UUID.slice(-12)}`).toString('base64');
         const s5Node = `\nsocks://${S5_AUTH}@${SERVER_IP}:${S5_PORT}#${nodeName}`;
@@ -735,7 +702,6 @@ trojan://${UUID}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&fp=chrome&type
       fs.writeFileSync(subPath, Buffer.from(subTxt).toString('base64'));
       fs.writeFileSync(listPath, subTxt, 'utf8');
       console.log(`${FILE_PATH}/sub.txt saved successfully`);
-      // 将订阅内容保存到全局变量，供 http 服务器使用
       subContent = Buffer.from(subTxt).toString('base64');
       uploadNodes();
       resolve(subTxt);
@@ -743,7 +709,6 @@ trojan://${UUID}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&fp=chrome&type
   });
 }
 
-// 自动上传节点或订阅
 async function uploadNodes() {
   if (UPLOAD_URL && PROJECT_URL) {
     const subscriptionUrl = `${PROJECT_URL}/${SUB_PATH}`;
@@ -798,7 +763,6 @@ async function uploadNodes() {
   }
 }
 
-// 90s后删除相关文件
 function cleanFiles() {
   setTimeout(() => {
     const filesToDelete = [bootLogPath, configPath, webPath, botPath, listPath, certPath, keyPath];
@@ -826,7 +790,6 @@ function cleanFiles() {
 }
 cleanFiles();
 
-// Telegram 推送节点
 async function sendTelegram() {
   if (!BOT_TOKEN || !CHAT_ID) {
     console.log('TG variables is empty, Skipping push nodes to TG');
@@ -848,7 +811,6 @@ async function sendTelegram() {
   }
 }
 
-// 自动访问项目URL
 async function AddVisitTask() {
   if (!AUTO_ACCESS || !PROJECT_URL) {
     console.log("Skipping adding automatic access task");
@@ -871,19 +833,16 @@ async function AddVisitTask() {
   }
 }
 
-// 主运行逻辑
 async function startserver() {
   try {
     argoType();
     deleteNodes();
     cleanupOldFiles();
 
-    // 生成 Reality 密钥对 (仅当 REALITY_PORT 开启才生成)
     if (isValidPort(REALITY_PORT)) {
       generateOrLoadKeyPair();
     }
 
-    // 生成 TLS 证书 (用于 Hysteria2)
     if (isValidPort(HY2_PORT)) {
       ensureTlsCertificates(certPath, keyPath);
     }
@@ -901,11 +860,9 @@ startserver().catch(error => {
   console.error('Unhandled error in startserver:', error);
 });
 
-// 创建 http 服务器
 const server = http.createServer(async (req, res) => {
   const urlPath = req.url.split('?')[0];
 
-  // 订阅路由
   if (urlPath === `/${SUB_PATH}`) {
     if (subContent) {
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -923,7 +880,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 根路由: /
   if (urlPath === '/') {
     try {
       const filePath = path.join(__dirname, 'index.html');
